@@ -7,3 +7,6 @@ Program dependencies:
 * [GNU Parallel], used if present - not necessary
 * Perl
 
+Pipeline is run with
+* run.sh <DIR> <Number of guides> <Window size> <Threshold> <Contig end length>
+
