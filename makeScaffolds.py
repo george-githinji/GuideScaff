@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Runar Furenes'
-__email__  = 'runarfu@ifi.uio.no'
+__email__ = 'runarfu@ifi.uio.no'
 
 import argparse
 import sys
 from collections import namedtuple
 from itertools import izip, tee
 
-FASTA_TEXTWIDTH  = 80
+FASTA_TEXTWIDTH = 80
 ContigLinksEntry = namedtuple('ContigLinksEntry', 'GAP,ORIENTATION,CONTIGID')
+
 
 def pairwise(it):
     """
@@ -18,6 +19,7 @@ def pairwise(it):
     a, b = tee(it)
     next(b, None)
     return izip(a, b)
+
 
 def reverseComplement(seq):
     """
@@ -46,24 +48,25 @@ def reverseComplement(seq):
     #                            Replace   Reverse
     return ''.join(map(lambda x: trans[x], seq[::-1]))
 
+
 def readMultiFASTA(filename):
     """
     Read a multi-FASTA file and return each sequence in a dictionary
     with FASTA headers as keys and (flattened) sequences as values.
     """
-    f = open(filename)
     d = {}
     try:
-        c = f.read()
-        f.close()
-        entries = c.split('>')
-        for entry in entries[1:]:
-            lines = entry.split('\n')
-            header = lines[0].split()[0]
-            d[header] = ''.join(lines[1:])
-    except:
+        with open(filename) as f:
+            c = f.read()
+    except IOError:
         sys.stderr.write('Failed to read/parse FASTA-file %s\n' % filename)
+    entries = c.split('>')
+    for entry in entries[1:]:
+        lines = entry.split('\n')
+        header = lines[0].split()[0]
+        d[header] = ''.join(lines[1:])
     return d
+
 
 def parseFile(filename, tupleType):
     """
@@ -71,9 +74,9 @@ def parseFile(filename, tupleType):
     Return dict with clusters as keys and a list of entries for each key.
     """
     try:
-        f = open(filename)
-        content = f.read()
-    except:
+        with open(filename) as f:
+            content = f.read()
+    except IOError:
         sys.stderr.write('Failed to read %s\n' % filename)
         sys.exit(1)
     clusters = content.split('\n>')
@@ -90,8 +93,8 @@ def parseFile(filename, tupleType):
             entry = tupleType(*elements)
             entries.append(entry)
         d[header] = entries
-    f.close()
     return d
+
 
 def findUnusedContigs(d, contigs):
     """
@@ -109,6 +112,7 @@ def findUnusedContigs(d, contigs):
         d[contig] = contigs[contig]
     return d
 
+
 def merge(s1, s2, o):
     """
     Merge two string (sequences) together according to an overlap
@@ -116,20 +120,22 @@ def merge(s1, s2, o):
     """
     return s1 + s2[o:]
 
-def nOverlap(s1, s2):  
+
+def nOverlap(s1, s2):
     """
     Calculate number of overlapping symbols between end of s1 and start of s2.
     """
-    x = min(len(s1), len(s2))  
-    while x > 0:  
-        if s1[-x:] == s2[:x]:  
-            break  
-        x -= 1  
-    return x  
+    x = min(len(s1), len(s2))
+    while x > 0:
+        if s1[-x:] == s2[:x]:
+            break
+        x -= 1
+    return x
+
 
 def makeScaffolds(d, contigs):
     """
-    Build actual scaffolds out of the contig-links in dictionary d,
+    Build actual scaffolds from the contig-links in dictionary d,
     with contig-sequences stored in dictionary contigs.
     """
     scaffolds = {} # Resulting scaffolds-dictionary
@@ -139,7 +145,6 @@ def makeScaffolds(d, contigs):
         while i < len(d[cluster]):
             c1 = d[cluster][i]
             gap = int(c1.GAP)
-            seq1 = ''
             if c1.ORIENTATION == '-':
                 seq1 = reverseComplement(contigs[c1.CONTIGID])
             else:
@@ -150,17 +155,16 @@ def makeScaffolds(d, contigs):
                 scaffold.append(seq1)
                 ns = 'N' * gap
                 scaffold.append(ns)
-                i += 1 # Go to next contig in contig-links
+                i += 1  # Go to next contig in contig-links
             # If gap-estimate is negative, try to merge the current contig
             # with the next.
             else:
-                c2 = d[cluster][i+1]
-                seq2 = ''
+                c2 = d[cluster][i + 1]
                 if c2.ORIENTATION == '-':
                     seq2 = reverseComplement(contigs[c2.CONTIGID])
                 else:
                     seq2 = contigs[c2.CONTIGID]
-                # Figure out if there is an ACTUAL overlap between the two
+                    # Figure out if there is an ACTUAL overlap between the two
                 # sequences.
                 overlap = nOverlap(seq1, seq2)
                 # If there is, merge them and append the merged contigs to
@@ -168,7 +172,7 @@ def makeScaffolds(d, contigs):
                 if overlap > 0:
                     merged = merge(seq1, seq2, overlap)
                     scaffold.append(merged)
-                    i += 2 # Now both contigs are processed, skip to next one
+                    i += 2  # Now both contigs are processed, skip to next one
                 else:
                     # In this case, there were no actual overlap.
                     # Append sequence to scaffold and go to next contig in
@@ -179,21 +183,23 @@ def makeScaffolds(d, contigs):
         scaffolds[cluster] = ''.join(scaffold)
     return scaffolds
 
+
 def writeScaffoldsToFile(a, scaffolds):
     """
     Write scaffolds to file in a multi-FASTA format.
     """
-    f = open(a.outputFile, 'w')
     try:
+        f = open(a.outputFile, 'w')
         for cluster in sorted(scaffolds.keys()):
             header = cluster
             # Split sequence into lines according to pre-defined
             # FASTA width.
-            seq = '\n'.join(scaffolds[cluster][i:i+FASTA_TEXTWIDTH] \
-                for i in xrange(0, len(scaffolds[cluster]), FASTA_TEXTWIDTH))
-            f.write('>%s\n%s\n' % (header, seq)) 
-    except:
+            seq = '\n'.join(scaffolds[cluster][i:i + FASTA_TEXTWIDTH] \
+                            for i in xrange(0, len(scaffolds[cluster]), FASTA_TEXTWIDTH))
+            f.write('>%s\n%s\n' % (header, seq))
+    except IOError:
         sys.stderr.write('Failed to write scaffolds to %s\n' % a.outputFile)
+
 
 if __name__ == '__main__':
     # Parse command line arguments for input and output files.
@@ -201,21 +207,21 @@ if __name__ == '__main__':
     file')
 
     p.add_argument('-i', '--inputFile', dest='inputFile',
-    help='Input file with contig-links, orientations and gap estimates', required=True)
+                   help='Input file with contig-links, orientations and gap estimates', required=True)
     p.add_argument('-o', '--outputFile', dest='outputFile',
-    help='Output file for scaffolds and unused contigs', required=True)
-    p.add_argument('-c', '--contigsFile', dest='contigsFile', 
-    help='File in FASTA-format containing all the contigs used in contig-links\
+                   help='Output file for scaffolds and unused contigs', required=True)
+    p.add_argument('-c', '--contigsFile', dest='contigsFile',
+                   help='File in FASTA-format containing all the contigs used in contig-links\
     file', required=True)
     a = p.parse_args()
 
     # Create dictionaries of contig-links and contig sequences
-    contigLinksDict     = parseFile(a.inputFile, ContigLinksEntry)
-    contigsDict         = readMultiFASTA(a.contigsFile)
+    contigLinksDict = parseFile(a.inputFile, ContigLinksEntry)
+    contigsDict = readMultiFASTA(a.contigsFile)
     # Figure out which contigs are not used in any of the contig-links
-    unusedContigs       = findUnusedContigs(contigLinksDict, contigsDict)
+    unusedContigs = findUnusedContigs(contigLinksDict, contigsDict)
     # Create scaffolds from the contig-links
-    scf                 = makeScaffolds(contigLinksDict, contigsDict)
+    scf = makeScaffolds(contigLinksDict, contigsDict)
     # Merge created scaffolds with the unused contigs to a total dictionary
     scaffoldsAndContigs = dict(scf, **unusedContigs)
     # Write all these to a multi-FASTA file

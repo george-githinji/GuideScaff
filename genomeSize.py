@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Runar Furenes'
-__email__  = 'runarfu@ifi.uio.no'
+__email__ = 'runarfu@ifi.uio.no'
 
-from sys import argv
+import sys
+
 
 def readMultiFASTA(filename):
     """
@@ -20,13 +21,14 @@ def readMultiFASTA(filename):
             lines = entry.split('\n')
             header = lines[0]
             d[header] = ''.join(lines[1:])
-    except:
+    except IOError:
         sys.stderr.write('Failed to read/parse FASTA-file %s\n' % filename)
     return d
 
+
 if __name__ == '__main__':
-    fastas = readMultiFASTA(argv[1])
-    for fasta in fastas.keys():
-        l = len(fastas[fasta])
-        print('%d\t%s' % (l, fasta))
+    fastaFiles = readMultiFASTA(sys.argv[1])
+    for fastaHeader, fastaSequence in fastaFiles.items():
+        fastaSequenceLength = len(fastaSequence)
+        print('%d\t%s' % (fastaSequenceLength, fastaHeader))
 
