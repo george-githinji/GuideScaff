@@ -8,5 +8,5 @@ Program dependencies:
 * Perl
 
 Pipeline is run with
-* run.sh <DIR> <Number of guides> <Window size> <Threshold> <Contig end length>
+* run.sh DIR NGUIDES WINDOWSIZE THRESHOLD NCUT
 
