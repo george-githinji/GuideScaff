@@ -10,7 +10,7 @@ PROMERFLAGS="-o -p $PREFIX"
 # Test if mappings are already present
 if test -n "$(shopt -s nullglob; echo $PREFIX.*)"
 then
-	:
+    :
 else
     # Run nucmer first to calculate average identity value
     nucmer -o -p $PREFIX $GENOME $QUERY
