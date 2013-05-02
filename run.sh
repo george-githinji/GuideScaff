@@ -22,7 +22,7 @@ command_exists () {
 # Make paired ends of contigs
 extractContigEnds.py --inputFile  $DIR/contigs.fasta \
                      --outputFile $DIR/contigEnds.fasta \
-					 --nCut $NCUT
+                     --nCut $NCUT
 echo "> Made contig pairs with nCut=$NCUT" >&2
 
 # Map the contig-pairs to each of the guiding genomes in parallel
@@ -42,15 +42,15 @@ echo "> Aligned contig ends to all guiding genomes" >&2
 # using only the ones produced with NCUT ends, if several is present
 makeContigLinks.py --inputFiles $GUIDE_DIR/*.fasta.$NCUT.tiling \
                    --output     $DIR/contigLinks \
-				   --nGuides    $NGUIDES \
-				   --windowSize $WINDOWSIZE \
-				   --threshold  $THRESHOLD
+                   --nGuides    $NGUIDES \
+                   --windowSize $WINDOWSIZE \
+                   --threshold  $THRESHOLD
 echo "> Created contig-links from tiling-files" >&2
 
 # Use contig links to build scaffolds in FASTA format
 makeScaffolds.py --inputFile   $DIR/contigLinks \
                  --outputFile  $DIR/scaffolds.fasta \
-				 --contigsFile $DIR/contigs.fasta
+                 --contigsFile $DIR/contigs.fasta
 echo "> Created scaffolds in scaffolds.fasta" >&2
 
 ################################################################################
